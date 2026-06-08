@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Ekstraklasa Retro Draft — Turnieje (makieta klikalna)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: #20242b;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100%; padding: 18px; box-sizing: border-box;
+      font-family: 'Barlow', system-ui, sans-serif;
+    }
+
+    /* ── ramka telefonu ── */
+    .tf-phone {
+      width: 402px; max-width: 100%;
+      height: min(880px, calc(100vh - 36px));
+      background: var(--paper); color: var(--ink);
+      border-radius: 26px; overflow: hidden;
+      display: flex; flex-direction: column; position: relative;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.45), 0 0 0 8px #14171c, 0 0 0 9px #2c313a;
+    }
+    @media (max-width: 440px) {
+      body { padding: 0; }
+      .tf-phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; box-shadow: none; }
+    }
+
+    /* górny pasek */
+    .tf-top {
+      flex-shrink: 0; height: 54px; background: var(--ink); color: var(--paper);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 0 12px; position: relative; z-index: 10;
+    }
+    .tf-top-btn {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: rgba(255,255,255,0.08); border: none; color: var(--paper);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .tf-top-btn:active { background: rgba(255,255,255,0.18); }
+
+    /* obszar treści — papier gazetowy, scroll */
+    .tf-board {
+      flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      position: relative; line-height: 1.34;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(28,24,19,0.035) 31px, rgba(28,24,19,0.035) 32px),
+        var(--paper);
+    }
+    .tf-board::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .tf-board > * { position: relative; z-index: 1; }
+  </style>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <template id="__bundler_thumbnail">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#c8102e"/>
+      <rect x="30" y="30" width="40" height="40" rx="6" fill="#f4efe2"/>
+      <text x="50" y="58" font-family="Oswald, sans-serif" font-size="22" font-weight="700" fill="#c8102e" text-anchor="middle">T</text>
+    </svg>
+  </template>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="event-cards.jsx"></script>
+  <script type="text/babel" src="tournament-screens.jsx"></script>
+  <script type="text/babel" src="tournament-flow-data.jsx"></script>
+  <script type="text/babel" src="tournament-flow-steps.jsx"></script>
+  <script type="text/babel" src="tournament-flow-app.jsx"></script>
+</body>
+</html>

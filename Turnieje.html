@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Ekstraklasa Retro Draft — Turnieje (UX 1.0)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    html, body { margin: 0; height: 100%; background: #d9d2c4; }
+    .ev-board {
+      height: 100%; overflow: hidden; display: block;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(28,24,19,0.035) 31px, rgba(28,24,19,0.035) 32px),
+        var(--paper);
+      color: var(--ink); font-family: 'Barlow', system-ui, sans-serif; line-height: 1.34; position: relative;
+    }
+    .ev-board::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 50; opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .ev-board > * { position: relative; z-index: 1; }
+  </style>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="event-cards.jsx"></script>
+  <script type="text/babel" src="tournament-screens.jsx"></script>
+
+  <script type="text/babel">
+    const { FlagChip, StatusBanner, StandingsTable, FixtureRow, MatchCard, Ladder, TournamentTile, EndScreen, EventCard, teamName } = window;
+    const OS = "'Oswald', system-ui, sans-serif";
+
+    // ── szkielet ekranu (strona gazety) ──
+    function Board({ children, pad = 16 }) {
+      return <div className="ev-board theme-light" style={{ padding: pad }}>{children}</div>;
+    }
+    function ScreenHead({ kicker, title, back = true }) {
+      return (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {back && <div style={{ width: 34, height: 34, borderRadius: 99, border: '1.5px solid var(--line-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="10" height="16" viewBox="0 0 12 20"><path d="M10 2L2 10l8 8" stroke="var(--ink)" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>}
+            <div style={{ minWidth: 0 }}>
+              <div className="kicker" style={{ fontSize: '0.6rem', marginBottom: 4, whiteSpace: 'nowrap' }}>{kicker}</div>
+              <div className="head head-lg" style={{ fontSize: '1.32rem', lineHeight: 1, whiteSpace: 'nowrap' }}>{title}</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── DANE EURO 2016 — Grupa C (realne wyniki) ──
+    const GROUP_C = [
+      { code: 'GER', m: 3, gf: 3, ga: 0, pts: 7 },
+      { code: 'POL', m: 3, gf: 2, ga: 0, pts: 7 },
+      { code: 'NIR', m: 3, gf: 2, ga: 2, pts: 3 },
+      { code: 'UKR', m: 3, gf: 0, ga: 5, pts: 0 },
+    ];
+    const GROUP_C_LIVE = [
+      { code: 'GER', m: 2, gf: 2, ga: 0, pts: 4 },
+      { code: 'POL', m: 2, gf: 1, ga: 0, pts: 4 },
+      { code: 'NIR', m: 2, gf: 2, ga: 1, pts: 3 },
+      { code: 'UKR', m: 2, gf: 0, ga: 4, pts: 0 },
+    ];
+    // ── DANE MINITURNIEJ (drużyna gracza = TY) ──
+    const MINI_K1 = [
+      { code: 'TY',  m: 1, gf: 2, ga: 0, pts: 3 },
+      { code: 'LEG', m: 1, gf: 1, ga: 0, pts: 3 },
+      { code: 'WIS', m: 1, gf: 0, ga: 1, pts: 0 },
+      { code: 'WID', m: 1, gf: 0, ga: 2, pts: 0 },
+    ];
+    const MINI = [
+      { code: 'TY',  m: 3, gf: 6, ga: 2, pts: 7 },
+      { code: 'LEG', m: 3, gf: 4, ga: 3, pts: 4 },
+      { code: 'WIS', m: 3, gf: 3, ga: 4, pts: 3 },
+      { code: 'WID', m: 3, gf: 2, ga: 6, pts: 1 },
+    ];
+    const MINI_OUT = [
+      { code: 'LEG', m: 3, gf: 6, ga: 2, pts: 7 },
+      { code: 'WIS', m: 3, gf: 4, ga: 3, pts: 6 },
+      { code: 'TY',  m: 3, gf: 3, ga: 4, pts: 3 },
+      { code: 'WID', m: 3, gf: 2, ga: 6, pts: 1 },
+    ];
+    const MINI_LADDER = [
+      { stage: 'Półfinał', opponent: 'WIS', state: 'current' },
+      { stage: 'Finał', opponent: null, state: 'locked' },
+    ];
+    const MINI_PATH_WIN = [
+      { stage: 'Grupa', opp: 'WIS', score: '2:0', win: true },
+      { stage: 'Półfinał', opp: 'WIS', score: '2:1', win: true },
+      { stage: 'Finał', opp: 'LEG', score: '1:0', win: true },
+    ];
+
+    // ── EURO 2016 — wariant odpadnięcia w grupie ──
+    const GROUP_C_OUT = [
+      { code: 'GER', m: 3, gf: 5, ga: 1, pts: 9 },
+      { code: 'UKR', m: 3, gf: 3, ga: 2, pts: 4 },
+      { code: 'NIR', m: 3, gf: 2, ga: 3, pts: 4 },
+      { code: 'POL', m: 3, gf: 1, ga: 4, pts: 1 },
+    ];
+    const PATH_GROUP_OUT = [
+      { stage: 'Mecz 1', opp: 'NIR', score: '0:1', loss: true },
+      { stage: 'Mecz 2', opp: 'GER', score: '0:2', loss: true },
+      { stage: 'Mecz 3', opp: 'UKR', score: '1:1', draw: true },
+    ];
+
+    const LADDER = [
+      { stage: '1/8 finału', opponent: 'SUI', state: 'done', score: '1:1 k.' },
+      { stage: 'Ćwierćfinał', opponent: 'POR', state: 'current' },
+      { stage: 'Półfinał', opponent: null, state: 'locked' },
+      { stage: 'Finał', opponent: null, state: 'locked' },
+    ];
+
+    const PATH_LOSS = [
+      { stage: '1/8', opp: 'SUI', score: '1:1 k.', win: true },
+      { stage: 'Ćwierćf.', opp: 'POR', score: '1:1 k.', loss: true },
+    ];
+    const PATH_WIN = [
+      { stage: '1/8', opp: 'SUI', score: '1:1 k.', win: true },
+      { stage: 'Ćwierćf.', opp: 'POR', score: '2:1', win: true },
+      { stage: 'Półfinał', opp: 'GER', score: '1:0', win: true },
+      { stage: 'Finał', opp: 'FRA', score: '2:1', win: true },
+    ];
+
+    function App() {
+      return (
+        <window.DesignCanvas>
+
+          {/* ===== HUB ===== */}
+          <window.DCSection id="hub" title="Hub turniejów" subtitle="Wybór turnieju · kafelki w stylu gazety · mobile-first">
+            <window.DCArtboard id="hub1" label="Hub · wybór turnieju" width={384} height={812}>
+              <Board>
+                <ScreenHead kicker="Ekstraklasa Retro Draft" title="Turnieje" back={false} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+                  <TournamentTile kicker="Tryb podstawowy" title="Miniturniej Ekstraklasy"
+                    desc="Grupa czterech ekip, tabela na żywo i krótka faza pucharowa. Szybki sprawdzian składu."
+                    meta="Grupa 4" cta="Zagraj fazę grupową" state="open" />
+                  <TournamentTile kicker="Turniej historyczny" title="EURO 2016 Retro"
+                    desc="Poprowadź Polskę od grupy z Niemcami, Ukrainą i Irlandią Północną aż do finału."
+                    cta="Rozpocznij turniej" state="open" accent />
+                  <div className="rule" style={{ fontSize: '0.64rem', letterSpacing: '0.16em', margin: '4px 0' }}>Wkrótce</div>
+                  <TournamentTile kicker="Turniej historyczny" title="Mundial 2002" desc="Poprowadź Polskę przez turniej w Korei i Japonii. Korea, Portugalia, USA — i szansa, żeby napisać historię na nowo." state="locked" />
+                  <TournamentTile kicker="Rozgrywki" title="Europejskie puchary" desc="Droga przez europejskie drabinki klubowe." state="locked" />
+                  <TournamentTile kicker="Archiwum" title="Historyczne sezony" desc="Kultowe sezony polskiej ligi do odtworzenia." state="locked" />
+                </div>
+              </Board>
+            </window.DCArtboard>
+          </window.DCSection>
+
+          {/* ===== EURO 2016 — DROGA POLSKI ===== */}
+          <window.DCSection id="euro" title="EURO 2016 Retro — droga Polski" subtitle="Tryb narracyjny · Grupa C → faza pucharowa → finał">
+
+            <window.DCArtboard id="e1" label="Grupa Polski" width={384} height={628}>
+              <Board>
+                <ScreenHead kicker="Turniej historyczny" title="EURO 2016 Retro" />
+                <div className="card" style={{ padding: '14px 15px 16px' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <span className="kicker" style={{ fontSize: '0.6rem' }}>Twoja grupa</span>
+                    <div className="head" style={{ fontSize: '2.4rem', fontWeight: 700, lineHeight: 0.9, marginTop: 2 }}>Grupa C</div>
+                  </div>
+                  <hr className="dbl-rule" style={{ margin: '12px 0 13px' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                    {['POL', 'GER', 'UKR', 'NIR'].map((c) => (
+                      <div key={c} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 0' }}>
+                        <FlagChip code={c} />
+                        <span className="head head-md" style={{ flex: 1, fontSize: '1.08rem' }}>{teamName(c)}</span>
+                        {c === 'POL' && <span className="badge" style={{ background: 'var(--accent)', color: '#fff', height: 20 }}>Ty</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="muted" style={{ margin: '14px 4px 0', fontSize: '0.98rem', lineHeight: 1.4, textAlign: 'center' }}>
+                  Trzy mecze grupowe. Dwie najlepsze ekipy awansują do 1/8 finału.
+                </p>
+                <button className="btn btn-primary btn-block" style={{ marginTop: 16 }}>Zobacz terminarz</button>
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e2" label="Terminarz grupowy" width={384} height={470}>
+              <Board>
+                <ScreenHead kicker="Grupa C · Polska" title="Terminarz" />
+                <div className="card" style={{ padding: '4px 15px 12px' }}>
+                  <FixtureRow when="Mecz 1" home="POL" away="NIR" score="1 : 0" you="POL" />
+                  <FixtureRow when="Mecz 2" home="POL" away="GER" score="0 : 0" you="POL" />
+                  <FixtureRow when="Mecz 3" home="POL" away="UKR" score="1 : 0" you="POL" />
+                </div>
+                <p className="mute2" style={{ margin: '12px 4px 0', fontSize: '0.82rem', textAlign: 'center' }}>
+                  Komplet rozegrany — tabela rozstrzygnięta.
+                </p>
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e3" label="Tabela live" width={384} height={560}>
+              <Board>
+                <ScreenHead kicker="Grupa C · na żywo" title="Tabela grupy" />
+                <StandingsTable rows={GROUP_C} highlight="POL" advance={2} />
+                <StatusBanner tone="good" text="Polska wychodzi z grupy!" />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e3b" label="Tabela live · trwa" width={384} height={560}>
+              <Board>
+                <ScreenHead kicker="Grupa C · po 2. kolejce" title="Tabela grupy" />
+                <StandingsTable rows={GROUP_C_LIVE} highlight="POL" advance={2} />
+                <StatusBanner tone="warn" text="Wszystko rozstrzygnie ostatni mecz" />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e4" label="Przed meczem" width={384} height={612}>
+              <Board>
+                <MatchCard stage="Grupa C · Mecz 2" home="POL" away="GER"
+                  desc="Mecz o prestiż i kontrolę nad grupą."
+                  formHome={['W', 'R', 'W']} formAway={['W', 'W', 'R']} cta="Rozegraj mecz" />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e5" label="Wynik meczu" width={384} height={470}>
+              <Board>
+                <MatchCard stage="Grupa C · Mecz 2" home="POL" away="GER" played score="0 : 0"
+                  comment="Bezbramkowy klasyk. Defensywa zdała egzamin, a remis z faworytem smakuje jak zwycięstwo." />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e6" label="Awans z grupy" width={384} height={612}>
+              <Board>
+                <div style={{ textAlign: 'center', marginTop: 4 }}>
+                  <span style={{ display: 'inline-block', background: 'var(--b-tech)', color: '#fff', fontFamily: OS, fontWeight: 700, fontSize: '0.62rem', letterSpacing: '0.16em', padding: '4px 12px', borderRadius: 2, textTransform: 'uppercase' }}>Awans</span>
+                </div>
+                <hr className="dbl-rule" style={{ margin: '12px 0' }} />
+                <h1 className="head" style={{ fontSize: '1.9rem', fontWeight: 700, textAlign: 'center', lineHeight: 0.98 }}>Polska wychodzi z grupy!</h1>
+                <p className="muted" style={{ margin: '8px 0 0', fontSize: '1rem', textAlign: 'center', lineHeight: 1.36 }}>
+                  Drugie miejsce w grupie C, komplet czystych kont. Czas na fazę pucharową.
+                </p>
+                <div style={{ marginTop: 16 }}>
+                  <StandingsTable rows={GROUP_C} highlight="POL" advance={2} />
+                </div>
+                <button className="btn btn-primary btn-block" style={{ marginTop: 16 }}>Wejdź do drabinki</button>
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e6b" label="Odpadnięcie w grupie · moment" width={384} height={612}>
+              <Board>
+                <div style={{ textAlign: 'center', marginTop: 4 }}>
+                  <span style={{ display: 'inline-block', background: 'var(--ink)', color: 'var(--paper)', fontFamily: OS, fontWeight: 700, fontSize: '0.62rem', letterSpacing: '0.16em', padding: '4px 12px', borderRadius: 2, textTransform: 'uppercase' }}>Koniec grupy</span>
+                </div>
+                <hr className="dbl-rule" style={{ margin: '12px 0' }} />
+                <h1 className="head" style={{ fontSize: '1.9rem', fontWeight: 700, textAlign: 'center', lineHeight: 0.98 }}>Polska poza fazą pucharową</h1>
+                <p className="muted" style={{ margin: '8px 0 0', fontSize: '1rem', textAlign: 'center', lineHeight: 1.36 }}>
+                  Czwarte miejsce w grupie C. Turniej kończy się wcześniej, niż marzyliśmy.
+                </p>
+                <div style={{ marginTop: 16 }}>
+                  <StandingsTable rows={GROUP_C_OUT} highlight="POL" advance={2} />
+                </div>
+                <StatusBanner tone="bad" text="Koniec marzeń o fazie pucharowej" />
+                <button className="btn btn-solid btn-block" style={{ marginTop: 16 }}>Zobacz podsumowanie</button>
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e6c" label="Koniec · ODPADNIĘCIE W GRUPIE" width={384} height={720}>
+              <Board pad={18}>
+                <EndScreen outcome="loss"
+                  headline="Koniec już w grupie"
+                  sub="Trudny los grupy C okazał się za ciężki. Biało-czerwoni żegnają się z turniejem po fazie grupowej."
+                  path={PATH_GROUP_OUT}
+                  bestPlayer="Grzegorz Lato"
+                  lineupNote="4-3-3 · Twój skład"
+                  comment="Bywają grupy, z których nie ma łatwego wyjścia. Wracamy po naukę i rewanż." />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e7" label="Faza pucharowa · drabinka" width={384} height={640}>
+              <Board>
+                <ScreenHead kicker="EURO 2016 · faza pucharowa" title="Drabinka Polski" />
+                <Ladder steps={LADDER} />
+                <p className="mute2" style={{ margin: '14px 4px 0', fontSize: '0.82rem', textAlign: 'center' }}>
+                  Wygrana = krok wyżej. Porażka kończy turniej.
+                </p>
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e8" label="Zdarzenie · przed finałem" width={384} height={612}>
+              <Board pad={18}>
+                <EventCard section="Raport przedmeczowy" meta="EURO 2016 · finał" tone="prematch"
+                  title="Finał. Jeden mecz od historii"
+                  match={{ round: 'Finał EURO 2016', opponent: 'Naprzeciw: gospodarze i ich rozpędzona maszyna.' }}
+                  lead="Cały kraj wstrzymał oddech. Tu nie ma już jutra — jest tylko ten mecz."
+                  flavor="„W tunelu cisza. Słychać tylko bicie serc.”"
+                  effect={{ human: 'Drużyna gra na maksimum skupienia — to mecz życia.', tech: 'Efekt: + koncentracja' }}
+                  cta="Wyjdź na finał" />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e9" label="Koniec · WYGRANA" width={384} height={812}>
+              <Board pad={18}>
+                <EndScreen outcome="win"
+                  headline="Historia napisana na nowo"
+                  sub="Biało-czerwoni sięgają po EURO 2016 Retro. Niemożliwe stało się faktem."
+                  path={PATH_WIN}
+                  bestPlayer="Włodzimierz Lubański"
+                  lineupNote="4-3-3 · Złota Jedenastka"
+                  comment="Tego scenariusza nie wymyśliłby żaden dziennikarz. A jednak — Polska na szczycie Europy." />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="e10" label="Koniec · ODPADNIĘCIE" width={384} height={760}>
+              <Board pad={18}>
+                <EndScreen outcome="loss"
+                  headline="Karny dramat w ćwierćfinale"
+                  sub="2. miejsce w grupie C, odważny bój i koniec po rzutach karnych. Głowy do góry."
+                  path={PATH_LOSS}
+                  bestPlayer="Jan Tomaszewski"
+                  lineupNote="4-3-3 · Twój skład"
+                  comment="Tak blisko. Karne to loteria, ale charakteru tej drużynie nikt nie odbierze." />
+              </Board>
+            </window.DCArtboard>
+          </window.DCSection>
+
+          {/* ===== MINITURNIEJ EKSTRAKLASY ===== */}
+          <window.DCSection id="mini" title="Miniturniej Ekstraklasy" subtitle="Jeden spójny tryb · grupa 4 → tabela live → faza pucharowa → finał → koniec">
+
+            <window.DCArtboard id="m1" label="Wejście z zakładki Turnieje" width={384} height={600}>
+              <Board>
+                <ScreenHead kicker="Tryb podstawowy" title="Miniturniej" />
+                <div className="card" style={{ padding: '14px 15px 16px' }}>
+                  <div style={{ textAlign: 'center' }}><span className="kicker" style={{ fontSize: '0.6rem' }}>Twoja grupa</span>
+                    <div className="head" style={{ fontSize: '1.7rem', fontWeight: 700, lineHeight: 1, marginTop: 2 }}>Cztery ekipy, jeden cel</div></div>
+                  <hr className="dbl-rule" style={{ margin: '11px 0 12px' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {['TY', 'WIS', 'LEG', 'WID'].map((c) => (
+                      <div key={c} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '3px 0' }}>
+                        <FlagChip code={c} />
+                        <span className="head head-md" style={{ flex: 1, fontSize: '1.04rem' }}>{teamName(c)}</span>
+                        {c === 'TY' && <span className="badge" style={{ background: 'var(--accent)', color: '#fff', height: 20 }}>Ty</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="muted" style={{ margin: '13px 4px 0', fontSize: '0.96rem', lineHeight: 1.38, textAlign: 'center' }}>
+                  3 mecze grupowe, tabela na żywo, potem półfinał i finał.
+                </p>
+                <button className="btn btn-primary btn-block" style={{ marginTop: 15 }}>Zagraj fazę grupową</button>
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="m2" label="Terminarz grupowy" width={384} height={460}>
+              <Board>
+                <ScreenHead kicker="Miniturniej · Twoja grupa" title="Terminarz" />
+                <div className="card" style={{ padding: '4px 15px 12px' }}>
+                  <FixtureRow when="Mecz 1" home="TY" away="WID" score="2 : 0" you="TY" />
+                  <FixtureRow when="Mecz 2" home="TY" away="WIS" score="2 : 1" you="TY" />
+                  <FixtureRow when="Mecz 3" home="TY" away="LEG" score="2 : 1" you="TY" />
+                </div>
+                <p className="mute2" style={{ margin: '12px 4px 0', fontSize: '0.82rem', textAlign: 'center' }}>
+                  Po każdej kolejce tabela aktualizuje się na żywo.
+                </p>
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="m3" label="Mecz grupowy · przed" width={384} height={612}>
+              <Board>
+                <MatchCard stage="Miniturniej · Mecz 1" home="TY" away="WID"
+                  desc="Pierwszy sprawdzian wydraftowanego składu."
+                  formHome={['W', 'W', 'R']} formAway={['P', 'R', 'P']} cta="Rozegraj mecz" />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="m4" label="Mecz grupowy · wynik" width={384} height={470}>
+              <Board>
+                <MatchCard stage="Miniturniej · Mecz 1" home="TY" away="WID" played score="2 : 0"
+                  comment="Pewne otwarcie. Twoja jedenastka kontrolowała grę od pierwszej minuty." />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="m5" label="Tabela live · po 1. kolejce" width={384} height={520}>
+              <Board>
+                <ScreenHead kicker="Miniturniej · po 1. kolejce" title="Tabela grupy" />
+                <StandingsTable rows={MINI_K1} highlight="TY" advance={2} />
+                <StatusBanner tone="live" text="Dobre wejście — tak trzymać" />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="m6" label="Tabela live · po 3. kolejce" width={384} height={520}>
+              <Board>
+                <ScreenHead kicker="Miniturniej · komplet" title="Tabela grupy" />
+                <StandingsTable rows={MINI} highlight="TY" advance={2} />
+                <StatusBanner tone="good" text="Awans z pierwszego miejsca!" />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="m7" label="Awans z grupy" width={384} height={600}>
+              <Board>
+                <div style={{ textAlign: 'center', marginTop: 4 }}>
+                  <span style={{ display: 'inline-block', background: 'var(--b-tech)', color: '#fff', fontFamily: OS, fontWeight: 700, fontSize: '0.62rem', letterSpacing: '0.16em', padding: '4px 12px', borderRadius: 2, textTransform: 'uppercase' }}>Awans</span>
+                </div>
+                <hr className="dbl-rule" style={{ margin: '12px 0' }} />
+                <h1 className="head" style={{ fontSize: '1.9rem', fontWeight: 700, textAlign: 'center', lineHeight: 0.98 }}>Awans do fazy pucharowej!</h1>
+                <p className="muted" style={{ margin: '8px 0 0', fontSize: '1rem', textAlign: 'center', lineHeight: 1.36 }}>
+                  Pierwsze miejsce w grupie. Twój skład gra dalej.
+                </p>
+                <div style={{ marginTop: 16 }}>
+                  <StandingsTable rows={MINI} highlight="TY" advance={2} />
+                </div>
+                <button className="btn btn-primary btn-block" style={{ marginTop: 16 }}>Wejdź do drabinki</button>
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="m8" label="Odpadnięcie z grupy" width={384} height={600}>
+              <Board>
+                <div style={{ textAlign: 'center', marginTop: 4 }}>
+                  <span style={{ display: 'inline-block', background: 'var(--ink)', color: 'var(--paper)', fontFamily: OS, fontWeight: 700, fontSize: '0.62rem', letterSpacing: '0.16em', padding: '4px 12px', borderRadius: 2, textTransform: 'uppercase' }}>Koniec grupy</span>
+                </div>
+                <hr className="dbl-rule" style={{ margin: '12px 0' }} />
+                <h1 className="head" style={{ fontSize: '1.9rem', fontWeight: 700, textAlign: 'center', lineHeight: 0.98 }}>Bez awansu z grupy</h1>
+                <p className="muted" style={{ margin: '8px 0 0', fontSize: '1rem', textAlign: 'center', lineHeight: 1.36 }}>
+                  Trzecie miejsce. Tym razem zabrakło punktów do fazy pucharowej.
+                </p>
+                <div style={{ marginTop: 16 }}>
+                  <StandingsTable rows={MINI_OUT} highlight="TY" advance={2} />
+                </div>
+                <StatusBanner tone="bad" text="Koniec marzeń o fazie pucharowej" />
+                <button className="btn btn-solid btn-block" style={{ marginTop: 16 }}>Zagraj jeszcze raz</button>
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="m9" label="Faza pucharowa · drabinka" width={384} height={480}>
+              <Board>
+                <ScreenHead kicker="Miniturniej · faza pucharowa" title="Drabinka" />
+                <Ladder steps={MINI_LADDER} />
+                <p className="mute2" style={{ margin: '14px 4px 0', fontSize: '0.82rem', textAlign: 'center' }}>
+                  Wygrana = krok wyżej. Porażka kończy turniej.
+                </p>
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="m10" label="Finał · mecz" width={384} height={612}>
+              <Board>
+                <MatchCard stage="Miniturniej · Finał" home="TY" away="LEG"
+                  desc="Jeden mecz o trofeum. Wszystko albo nic."
+                  formHome={['W', 'W', 'W']} formAway={['W', 'R', 'W']} cta="Zagraj finał" />
+              </Board>
+            </window.DCArtboard>
+
+            <window.DCArtboard id="m11" label="Koniec · WYGRANA" width={384} height={760}>
+              <Board pad={18}>
+                <EndScreen outcome="win"
+                  headline="Miniturniej zdobyty!"
+                  sub="Twój wydraftowany skład sięga po trofeum bez porażki."
+                  path={MINI_PATH_WIN}
+                  bestPlayer="Zbigniew Boniek"
+                  lineupNote="4-3-3 · Twój skład"
+                  comment="Od draftu do pucharu. Ta jedenastka udowodniła, że historia może iść po Twojej myśli." />
+              </Board>
+            </window.DCArtboard>
+          </window.DCSection>
+
+        </window.DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('stage')).render(<App />);
+  </script>
+</body>
+</html>

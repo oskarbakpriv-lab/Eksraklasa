@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Ekstraklasa Retro Draft — Zdarzenia (UX)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    html, body { margin: 0; height: 100%; background: #d9d2c4; }
+    /* wrapper „strony gazety" pod kartę zdarzenia w artboardzie */
+    .ev-board {
+      height: 100%; overflow: hidden; display: block;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(28,24,19,0.035) 31px, rgba(28,24,19,0.035) 32px),
+        var(--paper);
+      color: var(--ink);
+      font-family: 'Barlow', system-ui, sans-serif;
+      position: relative;
+    }
+    .ev-board::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 50;
+      opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .ev-board > * { position: relative; z-index: 1; }
+  </style>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="event-cards.jsx"></script>
+
+  <script type="text/babel">
+    const { EventCard } = window;
+
+    function EvBoard({ children, pad = 18 }) {
+      return <div className="ev-board theme-light" style={{ padding: pad }}>{children}</div>;
+    }
+
+    // ── TREŚĆ ZDARZEŃ (konkretna, retro-ligowa — nie generyczna) ──
+    const EV = {
+      noChoice: {
+        section: 'Doniesienia klubowe', meta: 'Kronika kolejki · wydanie retro',
+        tone: 'neutral',
+        title: 'Działacze dosypują do kasy na premie',
+        lead: 'Zarząd ogłosił premie za awans. W szatni zrobiło się raźniej, choć starsi koledzy studzą zapały młodych.',
+        flavor: '„— Gramy o coś konkretnego. Reszta to gadanie.”',
+        effect: { human: 'Drużyna łapie wiatr w żagle przed kolejnymi meczami.', tech: 'Efekt: + morale' },
+        cta: 'Kontynuuj',
+      },
+      twoChoice: {
+        section: 'Wycinek z szatni', meta: 'Głos z boiska · przed treningiem',
+        tone: 'neutral',
+        title: 'Spór o rzuty karne',
+        lead: 'Dwóch liderów chce bić jedenastki. Trzeba zdecydować, kto staje nad piłką w decydujących momentach.',
+        flavor: '„W szatni zrobiło się gęsto — obaj patrzą trenerowi prosto w oczy.”',
+        choices: [
+          { letter: 'A', label: 'Postaw na doświadczenie', tone: 'neutral',
+            effectHuman: 'Spokój i pewność w kluczowych momentach, ale młodszy gwiazdor się dąsa.', effectTech: 'Efekt: + pewność / − atmosfera' },
+          { letter: 'B', label: 'Zaufaj młodości', tone: 'neutral',
+            effectHuman: 'Iskra i odwaga w ofensywie, lecz większe ryzyko pudła.', effectTech: 'Efekt: + animusz / − stabilność' },
+        ],
+        cta: 'Kontynuuj',
+      },
+      manager: {
+        section: 'Notka z ławki', meta: 'Komentarz trenerski',
+        tone: 'manager',
+        title: 'Górski prosi o jedną rzecz: spokój',
+        manager: { name: 'Kazimierz Górski', role: 'Trener' },
+        lead: 'Przed trudną serią gier szkoleniowiec zwołał zespół na krótką rozmowę przy tablicy.',
+        flavor: '„— Piłka jest prosta. Grajcie dla kolegi obok, nie dla gazet.”',
+        effect: { human: 'Zespół gra równiej, kiedy ufa trenerowi i trzyma się planu.', tech: 'Efekt: + zgranie' },
+        cta: 'Zapamiętaj słowa trenera',
+      },
+      positive: {
+        section: 'Głos z trybun', meta: 'Reportaż ze stadionu',
+        tone: 'positive',
+        title: 'Komplet na trybunach niesie drużynę',
+        lead: 'Wyprzedany stadion i doping od pierwszej minuty. Tak właśnie gra się u siebie.',
+        flavor: '„Kotłem zatrzęsło, zanim sędzia zdążył gwizdnąć początek.”',
+        effect: { human: 'Zawodnicy czują wsparcie z trybun i wchodzą w mecz z animuszem.', tech: 'Efekt: + morale / + świeżość' },
+        cta: 'Kontynuuj',
+      },
+      negative: {
+        section: 'Doniesienia klubowe', meta: 'Przegląd prasy',
+        tone: 'negative',
+        title: 'Media rozpisują się o kryzysie',
+        lead: 'Po słabszym sparingu prasa wieszczy problemy. Presja rośnie z każdym kolejnym nagłówkiem.',
+        flavor: '„— Czytamy to wszyscy. Odpowiedź może paść tylko na boisku.”',
+        effect: { human: 'Niepokój w szatni — liderzy muszą wziąć większy ciężar na siebie.', tech: 'Efekt: − świeżość' },
+        cta: 'Kontynuuj',
+      },
+      prematch: {
+        section: 'Raport przedmeczowy', meta: 'Zapowiedź · faza pucharowa',
+        tone: 'prematch',
+        title: 'Półfinał: rywal nie do lubienia',
+        match: { round: 'Runda 3 · Półfinał', opponent: 'Naprzeciw: silna, fizyczna ekipa z górnej połówki drabinki.' },
+        lead: 'Stawką jest finał. Rywal gra twardo, lubi pojedynki i pierwszy kontakt.',
+        flavor: '„Pachnie wielkim meczem. W szatni cisza przed burzą.”',
+        effect: { human: 'Pełne skupienie przed gwizdkiem — drużyna wie, o co toczy się gra.', tech: 'Efekt: + koncentracja' },
+        cta: 'Wyjdź na boisko',
+      },
+      postmatch: {
+        section: 'Kronika kolejki', meta: 'Reakcja po meczu',
+        tone: 'postwin',
+        title: 'Dograne w bólach, ale na tarczy',
+        match: { round: '', opponent: 'Decydujący gol padł w samej końcówce spotkania.', result: '2:1 · Zwycięstwo' },
+        lead: 'Trudny mecz i nerwy do ostatniej minuty. Awans dograny rzutem na taśmę.',
+        flavor: '„— Charakteru nam nie brakuje. I to się dziś liczyło najbardziej.”',
+        effect: { human: 'Pewność siebie rośnie przed kolejną rundą turnieju.', tech: 'Efekt: + morale' },
+        cta: 'Dalej do drabinki',
+      },
+    };
+
+    const SECTIONS = [
+      { id: 'a', label: '1 · Bez wyboru', h: 600, ev: EV.noChoice },
+      { id: 'b', label: '2 · Dwa wybory', h: 770, ev: EV.twoChoice },
+      { id: 'c', label: '3 · Menedżer', h: 700, ev: EV.manager },
+      { id: 'd', label: '4 · Pozytywne', h: 650, ev: EV.positive },
+      { id: 'e', label: '5 · Negatywne', h: 650, ev: EV.negative },
+      { id: 'f', label: '6 · Przedmeczowe', h: 700, ev: EV.prematch },
+      { id: 'g', label: '7 · Pomeczowe', h: 690, ev: EV.postmatch },
+      { id: 'h', label: '8 · Po wyborze', h: 820, ev: { ...EV.twoChoice, chosen: 0, effect: {} } },
+    ];
+
+    function App() {
+      return (
+        <window.DesignCanvas>
+          <window.DCSection id="warianty" title="Zdarzenia — warianty" subtitle="Karty jako wycinki z retro-gazety · tylko Normal/Hardcore · mobile-first">
+            {SECTIONS.map((s) => (
+              <window.DCArtboard key={s.id} id={s.id} label={s.label} width={384} height={s.h}>
+                <EvBoard><EventCard {...s.ev} /></EvBoard>
+              </window.DCArtboard>
+            ))}
+          </window.DCSection>
+
+          <window.DCSection id="responsywnosc" title="Mobile ↔ Desktop" subtitle="Ta sama karta „Spór o rzuty karne” — telefon i szerszy ekran">
+            <window.DCArtboard id="m" label="Mobile · 384" width={384} height={770}>
+              <EvBoard><EventCard {...EV.twoChoice} /></EvBoard>
+            </window.DCArtboard>
+            <window.DCArtboard id="dk" label="Desktop · 720" width={720} height={620}>
+              <EvBoard pad={30}><EventCard {...EV.twoChoice} layout="desktop" /></EvBoard>
+            </window.DCArtboard>
+          </window.DCSection>
+        </window.DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('stage')).render(<App />);
+  </script>
+</body>
+</html>

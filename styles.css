@@ -1,0 +1,322 @@
+/* ============================================================
+   Ekstraklasa Retro Draft — system wizualny (papier / PRL)
+   Motyw sterowany zmiennymi CSS (jasny/ciemny + akcent + gęstość)
+   ============================================================ */
+
+:root {
+  /* akcent — nadpisywany przez Tweaks */
+  --accent: #c8102e;          /* biało-czerwony */
+  --accent-ink: #ffffff;
+
+  /* gęstość — nadpisywana przez Tweaks (compact/regular/comfy) */
+  --gap: 12px;
+  --pad: 16px;
+  --tap: 52px;
+  --fs: 16px;
+}
+
+/* ---- MOTYW JASNY (papier) ---- */
+.theme-light {
+  --paper:    #ece2cf;   /* tło ekranu */
+  --paper-2:  #f6f0e2;   /* karta */
+  --paper-3:  #fbf7ec;   /* jasna karta / pole */
+  --ink:      #1c1813;   /* tekst główny */
+  --ink-soft: #5a5147;   /* tekst drugorzędny */
+  --ink-mute: #8c8273;   /* tekst trzeciorzędny */
+  --line:     rgba(28,24,19,0.16);
+  --line-2:   rgba(28,24,19,0.30);
+  --field:    #2f6b3f;
+  --field-2:  #28603a;
+  --field-line: rgba(255,255,255,0.55);
+  --shadow:   0 2px 0 rgba(28,24,19,0.10), 0 6px 18px rgba(28,24,19,0.10);
+  --grain-op: 0.05;
+}
+
+/* ---- MOTYW CIEMNY (wydanie nocne) ---- */
+.theme-dark {
+  --paper:    #17130e;   /* tło — ciepła czerń */
+  --paper-2:  #241e16;   /* karta */
+  --paper-3:  #2e2719;   /* karta jaśniejsza / pole */
+  --ink:      #f6eedd;   /* tekst główny — pergamin */
+  --ink-soft: #cebfa6;   /* tekst drugorzędny */
+  --ink-mute: #9a8d76;   /* tekst trzeciorzędny */
+  --line:     rgba(246,238,221,0.14);
+  --line-2:   rgba(246,238,221,0.34);
+  --field:    #2a5e39;
+  --field-2:  #21492d;
+  --field-line: rgba(255,255,255,0.42);
+  --shadow:   0 1px 0 rgba(255,255,255,0.04), 0 8px 22px rgba(0,0,0,0.5);
+  --grain-op: 0.04;
+}
+/* karta w trybie nocnym — delikatny połysk u góry + cieplejszy ton */
+.theme-dark .card {
+  background:
+    linear-gradient(180deg, rgba(255,247,230,0.05), rgba(255,247,230,0) 40%),
+    var(--paper-2);
+  border-color: var(--line-2);
+}
+.theme-dark .album-page {
+  box-shadow: inset 0 0 0 6px var(--paper-3), inset 0 0 0 7px var(--line-2);
+}
+
+/* ---- BADGE — stałe kolory niezależne od motywu ---- */
+:root {
+  --b-rep:  #c8102e; --b-rep-ink:  #fff;   /* reprezentant — czerwień */
+  --b-leg:  #c79320; --b-leg-ink:  #1c1813;/* legenda — złoto */
+  --b-sfg:  #1f5fa8; --b-sfg-ink:  #fff;   /* obcokrajowiec — błękit */
+  --b-kap:  #1c1813; --b-kap-ink:  #fff;   /* kapitan — czerń */
+  --b-tech: #2f7d4f; --b-tech-ink: #fff;   /* technik — zieleń */
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+.app-root {
+  height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Barlow', system-ui, sans-serif;
+  font-size: var(--fs);
+  line-height: 1.34;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* papierowy szum */
+.app-root::before {
+  content: '';
+  position: absolute; inset: 0;
+  pointer-events: none; z-index: 9999;
+  opacity: var(--grain-op);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- TYPOGRAFIA ---- */
+.head {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 1.02;
+  margin: 0;
+}
+.head-xl { font-size: 2.0rem; font-weight: 700; }
+.head-lg { font-size: 1.5rem; }
+.head-md { font-size: 1.18rem; }
+.kicker {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.16em; font-size: 0.72rem;
+  color: var(--accent);
+}
+.muted { color: var(--ink-soft); }
+.mute2 { color: var(--ink-mute); }
+.num {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700; font-variant-numeric: tabular-nums;
+}
+
+/* ---- SCROLL ---- */
+.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.scroll::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ---- PRZYCISKI ---- */
+.btn {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+  border: none; cursor: pointer; user-select: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: var(--tap); padding: 0 18px; font-size: 1.05rem;
+  border-radius: 4px; transition: transform .08s ease, filter .12s ease;
+}
+.btn:active { transform: translateY(1px) scale(0.995); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow); }
+.btn-primary:active { filter: brightness(0.94); }
+.btn-ghost {
+  background: transparent; color: var(--ink);
+  border: 2px solid var(--line-2);
+}
+.btn-solid { background: var(--ink); color: var(--paper); }
+.btn-block { width: 100%; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ---- KARTY ---- */
+.card {
+  background: var(--paper-2);
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+
+/* listwa pozycji (kolor lewej krawędzi karty) */
+.pos-BR  { --pos: #b9892b; }
+.pos-OBR { --pos: #2f7d4f; }
+.pos-POM { --pos: #1f5fa8; }
+.pos-NAP { --pos: #c8102e; }
+
+/* ---- BADGE ---- */
+.badge {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700; font-size: 0.66rem; letter-spacing: 0.06em;
+  padding: 3px 6px; border-radius: 3px; line-height: 1; white-space: nowrap;
+  display: inline-flex; align-items: center; height: 20px;
+}
+.badge-REP  { background: var(--b-rep);  color: var(--b-rep-ink); }
+.badge-LEG  { background: var(--b-leg);  color: var(--b-leg-ink); }
+.badge-SFG  { background: var(--b-sfg);  color: var(--b-sfg-ink); }
+.badge-KAP  { background: var(--b-kap);  color: var(--b-kap-ink); border: 1px solid var(--line-2); }
+.badge-TECH { background: var(--b-tech); color: var(--b-tech-ink); }
+
+/* gwiazdki / paski atrybutów */
+.stars { display: inline-flex; gap: 2px; }
+.star { width: 9px; height: 9px; display: inline-block; }
+
+/* chip pozycji */
+.poschip {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700; font-size: 0.8rem; letter-spacing: 0.04em;
+  color: #fff; background: var(--pos, var(--ink));
+  padding: 3px 7px; border-radius: 3px; min-width: 38px; text-align: center;
+}
+
+/* separator z gwiazdką (gazetowy) */
+.rule {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--ink-mute); text-transform: uppercase;
+}
+.rule::before, .rule::after {
+  content: ''; flex: 1; height: 1px; background: var(--line-2);
+}
+
+/* ============================================================
+   WINIETA GAZETY (PRL)
+   ============================================================ */
+.masthead {
+  border-top: 3px solid var(--ink);
+  border-bottom: 3px solid var(--ink);
+  padding: 8px 0 10px;
+  position: relative;
+}
+.masthead-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: 'Oswald', system-ui, sans-serif; text-transform: uppercase;
+  font-size: 0.6rem; letter-spacing: 0.14em; color: var(--ink-soft);
+  border-bottom: 1px solid var(--line); padding-bottom: 5px; margin-bottom: 7px;
+}
+.masthead-title {
+  font-family: 'Oswald', system-ui, sans-serif; font-weight: 700;
+  text-transform: uppercase; text-align: center; line-height: 0.86;
+  letter-spacing: -0.01em;
+}
+.dbl-rule { border: none; border-top: 3px double var(--ink); margin: 0; }
+
+/* ============================================================
+   ALBUM PANINI — strona + naklejki
+   ============================================================ */
+.album-page {
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(28,24,19,0.04) 27px, rgba(28,24,19,0.04) 28px),
+    var(--paper-3);
+  border: 1.5px solid var(--line-2);
+  border-radius: 6px;
+  padding: 12px 12px 14px;
+  box-shadow: inset 0 0 0 6px var(--paper-3), inset 0 0 0 7px var(--line);
+}
+.album-band {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--ink); color: var(--paper);
+  padding: 6px 10px; border-radius: 3px; margin-bottom: 10px;
+}
+.album-band .poschip { box-shadow: 0 0 0 2px var(--paper); }
+
+/* pojedyncza naklejka */
+.sticker {
+  position: relative; border-radius: 6px; overflow: hidden;
+  background: var(--paper-2);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 9px rgba(0,0,0,0.22), 0 1px 0 rgba(0,0,0,0.3), 0 0 0 1px rgba(28,24,19,0.22);
+}
+.theme-dark .sticker { border-color: #efe6d2; box-shadow: 0 5px 12px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.5); }
+.sticker::after { /* połysk */
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 45%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0));
+  pointer-events: none;
+}
+.sticker-top { height: 6px; background: var(--pos, var(--accent)); }
+.sticker-empty {
+  border: 2px dashed var(--line-2); border-radius: 6px;
+  background:
+    repeating-linear-gradient(45deg, transparent, transparent 7px, rgba(28,24,19,0.035) 7px, rgba(28,24,19,0.035) 8px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--ink-mute); text-align: center; gap: 4px;
+}
+
+/* ── NAKLEJKA PIŁKARSKA (Panini-style) ── */
+.psticker {
+  position: relative; border-radius: 8px; padding: 3px;
+  background: #fbfbf8;                       /* biały margines naklejki */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.24), 0 1px 0 rgba(0,0,0,0.3), 0 0 0 1px rgba(28,24,19,0.18);
+}
+.theme-dark .psticker { background: #efe6d2; box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.5); }
+.psticker-frame {
+  position: relative; border-radius: 5px; overflow: hidden;
+  border: 1.5px solid var(--pos, var(--accent)); background: var(--paper-2);
+}
+/* połysk po przekątnej */
+.psticker-frame::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 3;
+  background: linear-gradient(125deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 100%);
+}
+/* kadr „zdjęcia" w barwie pozycji + sylwetka + raster */
+.psticker-photo {
+  position: relative; aspect-ratio: 1 / 1; overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 14%, color-mix(in srgb, var(--pos) 42%, #fff) 0%, var(--pos) 55%, color-mix(in srgb, var(--pos) 60%, #000) 100%);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.psticker-photo::before { /* raster offsetowy (print) */
+  content: ''; position: absolute; inset: 0; z-index: 1; opacity: 0.16;
+  background-image: radial-gradient(rgba(255,255,255,0.9) 0.6px, transparent 0.7px);
+  background-size: 4px 4px;
+}
+.psticker-bust { position: relative; z-index: 2; width: 78%; height: auto; display: block; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25)); }
+/* chip pozycji w rogu */
+.psticker-pos {
+  position: absolute; top: 5px; left: 5px; z-index: 4;
+  font-family: 'Oswald', system-ui, sans-serif; font-weight: 700; font-size: 0.62rem; letter-spacing: 0.04em;
+  color: #fff; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.7);
+  padding: 1px 5px; border-radius: 3px;
+}
+/* emblemat (najważniejszy badge) w rogu */
+.psticker-emblem {
+  position: absolute; top: 4px; right: 4px; z-index: 4;
+  width: 22px; height: 22px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Oswald', system-ui, sans-serif; font-weight: 700; font-size: 0.5rem;
+  border: 1.5px solid #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+/* banderola z nazwiskiem */
+.psticker-name {
+  background: var(--paper-3); border-top: 1.5px solid var(--pos, var(--accent));
+  padding: 4px 5px 5px; text-align: center;
+}
+.psticker-surname {
+  font-family: 'Oswald', system-ui, sans-serif; font-weight: 700; text-transform: uppercase;
+  color: var(--ink); line-height: 0.98; letter-spacing: 0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.psticker-meta { color: var(--ink-soft); line-height: 1.1; }
+
+/* foliowe wykończenie dla legend (LEG) */
+.psticker-foil { background: linear-gradient(135deg, #f6d98a 0%, #c79320 28%, #fcefb6 50%, #b9892b 72%, #f3d77a 100%); }
+.psticker-foil .psticker-frame { border-color: #a9781a; }
+@media (prefers-reduced-motion: no-preference) {
+  .psticker-foil { background-size: 220% 220%; animation: foilShift 5s ease-in-out infinite; }
+}
+@keyframes foilShift { 0%,100% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } }
+
+/* animacje wejścia */
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
